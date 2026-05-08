@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>废话星系</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #000;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-container {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 8px;
+        }
+
+        #textInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #textInput::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        #launchBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 20px;
+            padding: 12px 28px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        #launchBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        #launchBtn:active {
+            transform: scale(0.98);
+        }
+
+        .stats {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .stats span {
+            color: rgba(102, 126, 234, 0.8);
+            font-weight: 600;
+        }
+
+        .clear-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            color: rgba(255, 100, 100, 0.6);
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 12px;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 100, 100, 0.1);
+            border-color: rgba(255, 100, 100, 0.5);
+            color: rgba(255, 100, 100, 0.9);
+        }
+
+        .rules {
+            position: fixed;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+            max-width: 400px;
+            padding: 0 20px;
+        }
+
+        .rules p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.8;
+            letter-spacing: 1px;
+        }
+
+        .rules .hint-text {
+            font-style: italic;
+        }
+
+        .input-hint {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: rgba(30, 30, 50, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px 40px;
+            text-align: center;
+            max-width: 320px;
+        }
+
+        .modal h3 {
+            font-size: 18px;
+            font-weight: 400;
+            margin-bottom: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .modal p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 24px;
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.cancel {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .modal-btn.cancel:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .modal-btn.confirm {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: rgba(255, 100, 100, 0.9);
+        }
+
+        .modal-btn.confirm:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .title {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            text-align: center;
+        }
+
+        .title h1 {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .title p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .milestone {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .milestone.show {
+            opacity: 1;
+        }
+
+        .milestone p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 2px;
+        }
+
+        .milestone .sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="title">
+        <h1>废话星系</h1>
+        <p>你的抱怨，终将成为星光</p>
+    </div>
+
+    <div class="rules">
+        <p class="hint-text">
+            每一次发射，都是一颗星。<br>
+            当星光累积，宇宙会回应你的倾诉。<br>
+            某些时刻，会有奇迹降临...<br>
+            <span style="opacity: 0.8; font-size: 12px;">（刷新页面，飞行中的粒子会继续它们的旅程）</span>
+        </p>
+    </div>
+
+    <div class="input-hint">
+        输入你的负面情绪或琐碎抱怨，它们会变成星星
+    </div>
+
+    <div class="milestone" id="milestone">
+        <p id="milestoneText"></p>
+        <p class="sub" id="milestoneSub"></p>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h3>确定要清空宇宙吗？</h3>
+            <p>所有星星和星球都将消失，无法恢复。</p>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" onclick="closeModal()">取消</button>
+                <button class="modal-btn confirm" onclick="confirmClear()">确认清空</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-container">
+        <div class="input-wrapper">
+            <input type="text" id="textInput" placeholder="今天好累啊..." maxlength="100">
+            <button id="launchBtn">发射</button>
+        </div>
+        <div class="stats">
+            已发射 <span id="count">0</span> 条废话 · <span id="planetCount">0</span> 颗星球
+        </div>
+        <button class="clear-btn" id="clearBtn" onclick="showClearModal()">清空宇宙</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let stars = [];
+        let planets = [];
+        let specialObjects = [];
+        let totalLaunched = 0;
+        let planetCount = 0;
+
+        const starColors = [
+            { r: 102, g: 126, b: 234 },
+            { r: 118, g: 75, b: 162 },
+            { r: 240, g: 147, b: 251 },
+            { r: 245, g: 87, b: 108 },
+            { r: 79, g: 172, b: 254 },
+            { r: 0, g: 242, b: 254 },
+            { r: 67, g: 233, b: 123 },
+            { r: 56, g: 249, b: 215 },
+            { r: 250, g: 112, b: 154 },
+            { r: 254, g: 225, b: 64 }
+        ];
+
+        const planetPresets = [
+            { baseColor: { r: 70, g: 130, b: 180 }, atmosphere: { r: 135, g: 206, b: 235 }, hasOcean: true, oceanColor: { r: 30, g: 80, b: 140 }, landColor: { r: 60, g: 120, b: 60 } },
+            { baseColor: { r: 180, g: 80, b: 50 }, atmosphere: { r: 200, g: 120, b: 80 }, hasOcean: false, landColor: { r: 150, g: 60, b: 40 } },
+            { baseColor: { r: 230, g: 180, b: 100 }, atmosphere: { r: 255, g: 200, b: 120 }, hasOcean: false, landColor: { r: 200, g: 150, b: 70 } },
+            { baseColor: { r: 50, g: 80, b: 180 }, atmosphere: { r: 80, g: 120, b: 220 }, hasOcean: false, hasStripes: true, stripeColor: { r: 70, g: 100, b: 200 } },
+            { baseColor: { r: 220, g: 190, b: 140 }, atmosphere: { r: 240, g: 210, b: 160 }, hasOcean: false, hasStripes: true, stripeColor: { r: 180, g: 150, b: 100 }, hasRings: true },
+            { baseColor: { r: 200, g: 150, b: 100 }, atmosphere: { r: 220, g: 170, b: 120 }, hasOcean: false, hasStripes: true, stripeColor: { r: 160, g: 100, b: 60 } },
+            { baseColor: { r: 150, g: 220, b: 220 }, atmosphere: { r: 180, g: 240, b: 240 }, hasOcean: false, hasStripes: true, stripeColor: { r: 120, g: 180, b: 180 } },
+            { baseColor: { r: 200, g: 180, b: 160 }, atmosphere: { r: 220, g: 200, b: 180 }, hasOcean: false, landColor: { r: 180, g: 150, b: 130 }, hasHeart: true },
+            { baseColor: { r: 140, g: 140, b: 140 }, atmosphere: { r: 160, g: 160, b: 160 }, hasOcean: false, hasCraters: true, craterColor: { r: 100, g: 100, b: 100 } },
+            { baseColor: { r: 200, g: 220, b: 255 }, atmosphere: { r: 220, g: 240, b: 255 }, hasOcean: false, hasIce: true, iceColor: { r: 240, g: 248, b: 255 } },
+            { baseColor: { r: 80, g: 30, b: 20 }, atmosphere: { r: 150, g: 50, b: 30 }, hasOcean: false, hasLava: true, lavaColor: { r: 255, g: 100, b: 50 } },
+            { baseColor: { r: 120, g: 80, b: 160 }, atmosphere: { r: 150, g: 100, b: 200 }, hasOcean: false, hasStripes: true, stripeColor: { r: 100, g: 60, b: 140 } },
+            { baseColor: { r: 50, g: 120, b: 50 }, atmosphere: { r: 80, g: 150, b: 80 }, hasOcean: false, hasForest: true, forestColor: { r: 30, g: 80, b: 30 } },
+            { baseColor: { r: 210, g: 140, b: 70 }, atmosphere: { r: 240, g: 170, b: 100 }, hasOcean: false, hasDunes: true, duneColor: { r: 180, g: 110, b: 50 } },
+            { baseColor: { r: 220, g: 150, b: 180 }, atmosphere: { r: 240, g: 180, b: 200 }, hasOcean: false, hasStripes: true, stripeColor: { r: 200, g: 120, b: 150 } },
+            { baseColor: { r: 200, g: 130, b: 70 }, atmosphere: { r: 230, g: 160, b: 100 }, hasOcean: false, hasHaze: true, hazeColor: { r: 255, g: 200, b: 150 } },
+            { baseColor: { r: 180, g: 200, b: 220 }, atmosphere: { r: 200, g: 220, b: 240 }, hasOcean: false, hasCracks: true, crackColor: { r: 100, g: 120, b: 150 } },
+            { baseColor: { r: 30, g: 100, b: 150 }, atmosphere: { r: 60, g: 140, b: 200 }, hasOcean: true, oceanColor: { r: 20, g: 60, b: 100 }, landColor: { r: 80, g: 140, b: 180 } },
+            { baseColor: { r: 255, g: 180, b: 170 }, atmosphere: { r: 255, g: 200, b: 190 }, hasOcean: false, hasStripes: true, stripeColor: { r: 255, g: 150, b: 140 } },
+            { baseColor: { r: 80, g: 40, b: 100 }, atmosphere: { r: 120, g: 60, b: 150 }, hasOcean: false, hasStripes: true, stripeColor: { r: 60, g: 30, b: 80 } },
+            { baseColor: { r: 220, g: 200, b: 80 }, atmosphere: { r: 240, g: 220, b: 100 }, hasOcean: false, hasCraters: true, craterColor: { r: 180, g: 160, b: 60 } },
+            { baseColor: { r: 60, g: 180, b: 160 }, atmosphere: { r: 90, g: 210, b: 190 }, hasOcean: true, oceanColor: { r: 40, g: 140, b: 120 }, landColor: { r: 80, g: 200, b: 180 } },
+            { baseColor: { r: 150, g: 70, b: 50 }, atmosphere: { r: 180, g: 90, b: 70 }, hasOcean: false, hasDunes: true, duneColor: { r: 120, g: 50, b: 35 } },
+            { baseColor: { r: 60, g: 60, b: 140 }, atmosphere: { r: 90, g: 90, b: 180 }, hasOcean: false, hasStripes: true, stripeColor: { r: 40, g: 40, b: 110 } },
+            { baseColor: { r: 150, g: 220, b: 180 }, atmosphere: { r: 180, g: 240, b: 200 }, hasOcean: false, hasIce: true, iceColor: { r: 200, g: 255, b: 230 } },
+            { baseColor: { r: 255, g: 180, b: 80 }, atmosphere: { r: 255, g: 200, b: 120 }, hasOcean: false, hasStripes: true, stripeColor: { r: 230, g: 150, b: 50 } },
+            { baseColor: { r: 20, g: 30, b: 80 }, atmosphere: { r: 40, g: 60, b: 120 }, hasOcean: false, hasLava: true, lavaColor: { r: 100, g: 150, b: 255 } },
+            { baseColor: { r: 120, g: 130, b: 60 }, atmosphere: { r: 150, g: 160, b: 80 }, hasOcean: false, hasForest: true, forestColor: { r: 90, g: 100, b: 40 } },
+            { baseColor: { r: 200, g: 100, b: 120 }, atmosphere: { r: 230, g: 130, b: 150 }, hasOcean: false, hasStripes: true, stripeColor: { r: 170, g: 70, b: 90 } },
+            { baseColor: { r: 170, g: 175, b: 180 }, atmosphere: { r: 190, g: 195, b: 200 }, hasOcean: false, hasCraters: true, craterColor: { r: 130, g: 135, b: 140 } },
+            { baseColor: { r: 0, g: 150, b: 180 }, atmosphere: { r: 30, g: 180, b: 210 }, hasOcean: true, oceanColor: { r: 0, g: 100, b: 130 }, landColor: { r: 20, g: 170, b: 200 } },
+            { baseColor: { r: 140, g: 30, b: 30 }, atmosphere: { r: 180, g: 50, b: 50 }, hasOcean: false, hasLava: true, lavaColor: { r: 255, g: 80, b: 80 } },
+            { baseColor: { r: 180, g: 160, b: 200 }, atmosphere: { r: 210, g: 190, b: 230 }, hasOcean: false, hasStripes: true, stripeColor: { r: 150, g: 130, b: 170 } }
+        ];
+
+        const specialPresets = [
+            { type: 'nebula', name: '星云' },
+            { type: 'blackhole', name: '黑洞' },
+            { type: 'comet', name: '彗星' },
+            { type: 'galaxy', name: '星系' }
+        ];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.size = Math.random() * 4 + 2;
+                this.speed = Math.random() * 0.03 + 0.02;
+                this.progress = 0;
+                this.trail = [];
+                this.maxTrail = 12;
+                this.glowSize = this.size * 4;
+                this.brightness = 1;
+            }
+
+            update() {
+                this.trail.push({ x: this.x, y: this.y, size: this.size });
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
+                this.progress += this.speed;
+                const easeProgress = 1 - Math.pow(1 - this.progress, 3);
+                const dx = this.targetX - this.x;
+                const dy = this.targetY - this.y;
+                this.x += dx * easeProgress * 0.05;
+                this.y += dy * easeProgress * 0.05;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 5 || this.progress >= 1) {
+                    return true;
+                }
+                return false;
+            }
+
+            draw() {
+                const alpha = this.brightness;
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const ratio = i / this.trail.length;
+                    const trailSize = t.size * ratio * 1.5;
+                    const trailAlpha = ratio * 0.5 * alpha;
+                    const gradient = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, trailSize * 3);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${trailAlpha})`);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, trailSize * 3, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 0.8 * alpha, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.fill();
+                const glowGradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.glowSize);
+                glowGradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+                glowGradient.addColorStop(0.3, `rgba(255, 255, 255, ${0.6 * alpha})`);
+                glowGradient.addColorStop(0.6, `rgba(255, 255, 255, ${0.2 * alpha})`);
+                glowGradient.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.glowSize, 0, Math.PI * 2);
+                ctx.fillStyle = glowGradient;
+                ctx.fill();
+            }
+        }
+
+        class Star {
+            constructor(x, y, colorObj, size) {
+                this.x = x;
+                this.y = y;
+                this.colorObj = colorObj || { r: 255, g: 255, b: 255 };
+                this.baseSize = size || Math.random() * 1.5 + 0.5;
+                this.size = this.baseSize;
+                this.twinkleSpeed = Math.random() * 0.05 + 0.02;
+                this.twinklePhase = Math.random() * Math.PI * 2;
+                this.brightness = 1;
+            }
+
+            update() {
+                this.twinklePhase += this.twinkleSpeed;
+                this.size = this.baseSize + Math.sin(this.twinklePhase) * 0.3;
+            }
+
+            draw() {
+                const { r, g, b } = this.colorObj;
+                const alpha = this.brightness;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                ctx.fill();
+                if (this.size > 1) {
+                    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+                    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.5 * alpha})`);
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            }
+        }
+
+        class Planet {
+            constructor(x, y, preset) {
+                this.x = x;
+                this.y = y;
+                this.preset = preset;
+                this.baseSize = Math.random() * 20 + 15;
+                this.size = 0;
+                this.targetSize = this.baseSize;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() * 0.005 + 0.002) * (Math.random() > 0.5 ? 1 : -1);
+                this.growing = true;
+                this.atmospherePhase = 0;
+            }
+
+            update() {
+                if (this.growing && this.size < this.targetSize) {
+                    this.size += (this.targetSize - this.size) * 0.05;
+                    if (this.targetSize - this.size < 0.1) {
+                        this.size = this.targetSize;
+                        this.growing = false;
+                    }
+                }
+                this.rotation += this.rotationSpeed;
+                this.atmospherePhase += 0.01;
+            }
+
+            draw() {
+                const p = this.preset;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                const atmoGlow = ctx.createRadialGradient(0, 0, this.size * 0.9, 0, 0, this.size * 1.5);
+                atmoGlow.addColorStop(0, `rgba(${p.atmosphere.r}, ${p.atmosphere.g}, ${p.atmosphere.b}, 0.3)`);
+                atmoGlow.addColorStop(0.5, `rgba(${p.atmosphere.r}, ${p.atmosphere.g}, ${p.atmosphere.b}, 0.1)`);
+                atmoGlow.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = atmoGlow;
+                ctx.fill();
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.clip();
+
+                const baseGradient = ctx.createRadialGradient(-this.size * 0.3, -this.size * 0.3, 0, 0, 0, this.size * 1.2);
+                baseGradient.addColorStop(0, `rgb(${Math.min(p.baseColor.r + 60, 255)}, ${Math.min(p.baseColor.g + 60, 255)}, ${Math.min(p.baseColor.b + 60, 255)})`);
+                baseGradient.addColorStop(0.5, `rgb(${p.baseColor.r}, ${p.baseColor.g}, ${p.baseColor.b})`);
+                baseGradient.addColorStop(1, `rgb(${Math.max(p.baseColor.r - 40, 0)}, ${Math.max(p.baseColor.g - 40, 0)}, ${Math.max(p.baseColor.b - 40, 0)})`);
+                ctx.fillStyle = baseGradient;
+                ctx.fillRect(-this.size, -this.size, this.size * 2, this.size * 2);
+
+                if (p.hasStripes) {
+                    ctx.globalAlpha = 0.4;
+                    for (let i = -5; i <= 5; i++) {
+                        const y = i * this.size * 0.18;
+                        const stripeHeight = this.size * 0.08 + Math.sin(this.rotation + i) * 2;
+                        ctx.fillStyle = `rgb(${p.stripeColor.r}, ${p.stripeColor.g}, ${p.stripeColor.b})`;
+                        ctx.fillRect(-this.size, y - stripeHeight / 2, this.size * 2, stripeHeight);
+                    }
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasOcean) {
+                    ctx.globalAlpha = 0.6;
+                    const landSpots = [{ x: -0.3, y: -0.2, r: 0.25 }, { x: 0.2, y: 0.3, r: 0.2 }, { x: -0.1, y: 0.4, r: 0.15 }, { x: 0.35, y: -0.1, r: 0.18 }];
+                    landSpots.forEach(spot => {
+                        ctx.beginPath();
+                        ctx.arc(spot.x * this.size, spot.y * this.size, spot.r * this.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgb(${p.landColor.r}, ${p.landColor.g}, ${p.landColor.b})`;
+                        ctx.fill();
+                    });
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasCraters) {
+                    ctx.globalAlpha = 0.5;
+                    const craters = [{ x: -0.2, y: -0.3, r: 0.15 }, { x: 0.3, y: 0.1, r: 0.12 }, { x: -0.1, y: 0.35, r: 0.1 }, { x: 0.15, y: -0.25, r: 0.08 }, { x: -0.35, y: 0.1, r: 0.11 }];
+                    craters.forEach(crater => {
+                        const cx = crater.x * this.size;
+                        const cy = crater.y * this.size;
+                        const cr = crater.r * this.size;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgb(${p.craterColor.r}, ${p.craterColor.g}, ${p.craterColor.b})`;
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(cx - cr * 0.2, cy - cr * 0.2, cr * 0.9, 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(180, 180, 180, 0.3)`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    });
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasIce) {
+                    ctx.globalAlpha = 0.4;
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (i / 5) * Math.PI * 2 + this.rotation * 0.3;
+                        const dist = this.size * 0.5;
+                        const ix = Math.cos(angle) * dist;
+                        const iy = Math.sin(angle) * dist;
+                        ctx.beginPath();
+                        ctx.arc(ix, iy, this.size * 0.25, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${p.iceColor.r}, ${p.iceColor.g}, ${p.iceColor.b}, 0.6)`;
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasLava) {
+                    ctx.globalAlpha = 0.7;
+                    const lavaRivers = [{ x1: -0.4, y1: -0.3, x2: 0.3, y2: 0.4 }, { x1: 0.2, y1: -0.4, x2: -0.3, y2: 0.2 }, { x1: -0.2, y1: 0.1, x2: 0.4, y2: -0.2 }];
+                    lavaRivers.forEach(river => {
+                        ctx.beginPath();
+                        ctx.moveTo(river.x1 * this.size, river.y1 * this.size);
+                        ctx.quadraticCurveTo((river.x1 + river.x2) * 0.3 * this.size, (river.y1 + river.y2) * 0.7 * this.size, river.x2 * this.size, river.y2 * this.size);
+                        ctx.strokeStyle = `rgb(${p.lavaColor.r}, ${p.lavaColor.g}, ${p.lavaColor.b})`;
+                        ctx.lineWidth = 3 + Math.sin(this.atmospherePhase * 2) * 1;
+                        ctx.stroke();
+                    });
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.lavaColor.r}, ${p.lavaColor.g}, ${p.lavaColor.b}, 0.5)`;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasForest) {
+                    ctx.globalAlpha = 0.5;
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const dist = this.size * (0.3 + Math.random() * 0.3);
+                        const fx = Math.cos(angle + this.rotation * 0.1) * dist;
+                        const fy = Math.sin(angle + this.rotation * 0.1) * dist;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, this.size * 0.15, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgb(${p.forestColor.r}, ${p.forestColor.g}, ${p.forestColor.b})`;
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasDunes) {
+                    ctx.globalAlpha = 0.3;
+                    for (let i = -3; i <= 3; i++) {
+                        const y = i * this.size * 0.25;
+                        ctx.beginPath();
+                        ctx.moveTo(-this.size, y);
+                        for (let x = -this.size; x <= this.size; x += 5) {
+                            const waveY = y + Math.sin((x + this.rotation * 20) * 0.1) * this.size * 0.05;
+                            ctx.lineTo(x, waveY);
+                        }
+                        ctx.strokeStyle = `rgb(${p.duneColor.r}, ${p.duneColor.g}, ${p.duneColor.b})`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasHeart) {
+                    ctx.globalAlpha = 0.4;
+                    const hx = 0, hy = 0, hr = this.size * 0.35;
+                    ctx.beginPath();
+                    ctx.moveTo(hx, hy + hr * 0.3);
+                    ctx.bezierCurveTo(hx - hr, hy - hr * 0.5, hx - hr * 0.5, hy - hr, hx, hy - hr * 0.3);
+                    ctx.bezierCurveTo(hx + hr * 0.5, hy - hr, hx + hr, hy - hr * 0.5, hx, hy + hr * 0.3);
+                    ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasCracks) {
+                    ctx.globalAlpha = 0.6;
+                    const cracks = [{ x1: -0.4, y1: -0.2, x2: 0.3, y2: 0.1 }, { x1: 0.1, y1: -0.4, x2: -0.2, y2: 0.3 }, { x1: -0.3, y1: 0.2, x2: 0.4, y2: -0.1 }, { x1: 0.2, y1: 0.3, x2: -0.1, y2: -0.3 }, { x1: -0.2, y1: -0.3, x2: 0.1, y2: 0.4 }];
+                    cracks.forEach(crack => {
+                        ctx.beginPath();
+                        ctx.moveTo(crack.x1 * this.size, crack.y1 * this.size);
+                        const segments = 4;
+                        for (let i = 1; i <= segments; i++) {
+                            const t = i / segments;
+                            const x = crack.x1 * this.size + (crack.x2 - crack.x1) * this.size * t + (Math.random() - 0.5) * 5;
+                            const y = crack.y1 * this.size + (crack.y2 - crack.y1) * this.size * t + (Math.random() - 0.5) * 5;
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.strokeStyle = `rgba(${p.crackColor.r}, ${p.crackColor.g}, ${p.crackColor.b}, 0.7)`;
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    });
+                    ctx.globalAlpha = 1;
+                }
+
+                if (p.hasHaze) {
+                    ctx.globalAlpha = 0.3;
+                    const hazeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                    hazeGrad.addColorStop(0, `rgba(${p.hazeColor.r}, ${p.hazeColor.g}, ${p.hazeColor.b}, 0.4)`);
+                    hazeGrad.addColorStop(0.7, `rgba(${p.hazeColor.r}, ${p.hazeColor.g}, ${p.hazeColor.b}, 0.2)`);
+                    hazeGrad.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 1.2, 0, Math.PI * 2);
+                    ctx.fillStyle = hazeGrad;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                ctx.globalAlpha = 0.15;
+                const cloudOffset = this.rotation * 0.5;
+                for (let i = 0; i < 3; i++) {
+                    const cloudX = Math.sin(cloudOffset + i * 2) * this.size * 0.5;
+                    const cloudY = Math.cos(cloudOffset + i * 1.5) * this.size * 0.3;
+                    ctx.beginPath();
+                    ctx.ellipse(cloudX, cloudY, this.size * 0.3, this.size * 0.1, cloudOffset, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                ctx.restore();
+
+                if (p.hasRings) {
+                    ctx.save();
+                    ctx.rotate(0.4);
+                    ctx.scale(1, 0.3);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 1.8, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(${p.baseColor.r + 30}, ${p.baseColor.g + 30}, ${p.baseColor.b + 20}, 0.6)`;
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 1.5, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(${p.baseColor.r + 20}, ${p.baseColor.g + 20}, ${p.baseColor.b + 10}, 0.4)`;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                const highlight = ctx.createRadialGradient(-this.size * 0.4, -this.size * 0.4, 0, -this.size * 0.2, -this.size * 0.2, this.size * 0.8);
+                highlight.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                highlight.addColorStop(1, 'transparent');
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = highlight;
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class SpecialObject {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.size = 0;
+                this.targetSize = type === 'nebula' ? 80 : type === 'galaxy' ? 60 : type === 'blackhole' ? 40 : 30;
+                this.rotation = 0;
+                this.rotationSpeed = 0.005;
+                this.growing = true;
+                this.phase = 0;
+            }
+
+            update() {
+                if (this.growing && this.size < this.targetSize) {
+                    this.size += (this.targetSize - this.size) * 0.03;
+                    if (this.targetSize - this.size < 0.5) {
+                        this.size = this.targetSize;
+                        this.growing = false;
+                    }
+                }
+                this.rotation += this.rotationSpeed;
+                this.phase += 0.02;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.type === 'nebula') {
+                    const colors = [{ r: 255, g: 100, b: 150, a: 0.15 }, { r: 100, g: 150, b: 255, a: 0.12 }, { r: 150, g: 255, b: 200, a: 0.1 }, { r: 255, g: 200, b: 100, a: 0.08 }];
+                    colors.forEach((c, i) => {
+                        const offset = Math.sin(this.phase + i) * 10;
+                        const nebulaGrad = ctx.createRadialGradient(offset, offset * 0.5, 0, 0, 0, this.size);
+                        nebulaGrad.addColorStop(0, `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a})`);
+                        nebulaGrad.addColorStop(0.5, `rgba(${c.r}, ${c.g}, ${c.b}, ${c.a * 0.5})`);
+                        nebulaGrad.addColorStop(1, 'transparent');
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                        ctx.fillStyle = nebulaGrad;
+                        ctx.fill();
+                    });
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2 + this.rotation;
+                        const dist = this.size * 0.4 + Math.sin(this.phase + i) * 10;
+                        const sx = Math.cos(angle) * dist;
+                        const sy = Math.sin(angle) * dist;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.fill();
+                    }
+                }
+                else if (this.type === 'blackhole') {
+                    ctx.rotate(this.rotation);
+                    for (let i = 3; i >= 0; i--) {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size * (1 + i * 0.3), 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(255, ${150 + i * 30}, ${50 + i * 20}, ${0.3 - i * 0.05})`;
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+                    const holeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 0.6);
+                    holeGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+                    holeGrad.addColorStop(0.8, 'rgba(0, 0, 0, 1)');
+                    holeGrad.addColorStop(1, 'rgba(50, 50, 80, 0.5)');
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.6, 0, Math.PI * 2);
+                    ctx.fillStyle = holeGrad;
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.65, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(150, 200, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                else if (this.type === 'galaxy') {
+                    ctx.rotate(this.rotation);
+                    const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 0.3);
+                    coreGrad.addColorStop(0, 'rgba(255, 255, 200, 0.8)');
+                    coreGrad.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = coreGrad;
+                    ctx.fill();
+                    for (let arm = 0; arm < 2; arm++) {
+                        ctx.beginPath();
+                        for (let i = 0; i < 100; i++) {
+                            const angle = (i / 100) * Math.PI * 3 + arm * Math.PI;
+                            const r = (i / 100) * this.size;
+                            const x = Math.cos(angle) * r;
+                            const y = Math.sin(angle) * r * 0.4;
+                            if (i === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        ctx.strokeStyle = `rgba(200, 220, 255, ${0.3 + Math.sin(this.phase) * 0.1})`;
+                        ctx.lineWidth = 8;
+                        ctx.stroke();
+                    }
+                }
+                else if (this.type === 'comet') {
+                    const cometAngle = this.rotation;
+                    ctx.save();
+                    ctx.rotate(cometAngle);
+                    const tailGrad = ctx.createLinearGradient(0, 0, -this.size * 3, 0);
+                    tailGrad.addColorStop(0, 'rgba(150, 200, 255, 0.6)');
+                    tailGrad.addColorStop(0.3, 'rgba(150, 200, 255, 0.3)');
+                    tailGrad.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.moveTo(0, -this.size * 0.3);
+                    ctx.lineTo(-this.size * 3, -this.size * 0.8);
+                    ctx.lineTo(-this.size * 3, this.size * 0.8);
+                    ctx.lineTo(0, this.size * 0.3);
+                    ctx.closePath();
+                    ctx.fillStyle = tailGrad;
+                    ctx.fill();
+                    ctx.restore();
+                    const nucleusGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 0.5);
+                    nucleusGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                    nucleusGrad.addColorStop(0.5, 'rgba(200, 220, 255, 0.8)');
+                    nucleusGrad.addColorStop(1, 'rgba(150, 180, 255, 0.3)');
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size * 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = nucleusGrad;
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function launchParticles(text) {
+            const inputRect = document.getElementById('textInput').getBoundingClientRect();
+            const startX = inputRect.left + inputRect.width / 2;
+            const startY = inputRect.top;
+            const particleCount = Math.min(text.length * 6, 100);
+            for (let i = 0; i < particleCount; i++) {
+                const targetX = Math.random() * width;
+                const targetY = Math.random() * height;
+                const particle = new Particle(startX, startY, targetX, targetY);
+                particles.push(particle);
+            }
+            totalLaunched++;
+            updateStats();
+            if (totalLaunched % 100 === 0) {
+                createSpecialObject();
+            } else if (totalLaunched % 33 === 0) {
+                createPlanet();
+            } else if (totalLaunched % 11 === 0) {
+                createColorfulStar();
+            }
+        }
+
+        function createPlanet() {
+            let x, y;
+            let attempts = 0;
+            const maxAttempts = 50;
+            const minDistance = 80;
+            do {
+                x = Math.random() * (width - 100) + 50;
+                y = Math.random() * (height - 100) + 50;
+                attempts++;
+            } while (attempts < maxAttempts && isTooClose(x, y, minDistance));
+            const preset = planetPresets[planetCount % planetPresets.length];
+            planets.push(new Planet(x, y, preset));
+            planetCount++;
+            updateStats();
+            dimSomeStars(0.1);
+            showMilestone('一颗新星球诞生了！', '你的宇宙正在成长');
+        }
+
+        function isTooClose(x, y, minDist) {
+            for (const planet of planets) {
+                const dx = x - planet.x;
+                const dy = y - planet.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) return true;
+            }
+            for (const obj of specialObjects) {
+                const dx = x - obj.x;
+                const dy = y - obj.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist + 30) return true;
+            }
+            return false;
+        }
+
+        function createColorfulStar() {
+            let x, y;
+            let attempts = 0;
+            const maxAttempts = 20;
+            const minDistance = 50;
+            do {
+                x = Math.random() * width;
+                y = Math.random() * height;
+                attempts++;
+            } while (attempts < maxAttempts && isTooCloseForStar(x, y, minDistance));
+            const colorObj = starColors[Math.floor(Math.random() * starColors.length)];
+            stars.push(new Star(x, y, colorObj, Math.random() * 3 + 2));
+            showMilestone('一颗彩色星星出现了！', '继续发射，解锁更多惊喜');
+        }
+
+        function isTooCloseForStar(x, y, minDist) {
+            for (const planet of planets) {
+                const dx = x - planet.x;
+                const dy = y - planet.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) return true;
+            }
+            return false;
+        }
+
+        function createSpecialObject() {
+            let x, y;
+            let attempts = 0;
+            const maxAttempts = 50;
+            const minDistance = 120;
+            do {
+                x = Math.random() * (width - 200) + 100;
+                y = Math.random() * (height - 200) + 100;
+                attempts++;
+            } while (attempts < maxAttempts && isTooClose(x, y, minDistance));
+            const preset = specialPresets[Math.floor(totalLaunched / 100 - 1) % specialPresets.length];
+            specialObjects.push(new SpecialObject(x, y, preset.type));
+            dimSomeStars(0.2);
+            showMilestone(`${preset.name}出现了！`, '宇宙的奥秘正在向你展开');
+        }
+
+        function dimSomeStars(ratio) {
+            const dimCount = Math.floor(stars.length * ratio);
+            for (let i = 0; i < dimCount; i++) {
+                const randomIndex = Math.floor(Math.random() * stars.length);
+                if (stars[randomIndex]) {
+                    stars[randomIndex].brightness *= 0.3;
+                }
+            }
+            stars = stars.filter(s => s.brightness > 0.1);
+        }
+
+        function showMilestone(text, sub) {
+            const milestone = document.getElementById('milestone');
+            document.getElementById('milestoneText').textContent = text;
+            document.getElementById('milestoneSub').textContent = sub;
+            milestone.classList.add('show');
+            setTimeout(() => {
+                milestone.classList.remove('show');
+            }, 2000);
+        }
+
+        function showClearModal() {
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function confirmClear() {
+            particles = [];
+            stars = [];
+            planets = [];
+            specialObjects = [];
+            totalLaunched = 0;
+            planetCount = 0;
+            localStorage.removeItem('galaxyData');
+            updateStats();
+            addBackgroundStars();
+            closeModal();
+        }
+
+        function updateStats() {
+            document.getElementById('count').textContent = totalLaunched;
+            document.getElementById('planetCount').textContent = planetCount;
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            specialObjects.forEach(obj => {
+                obj.update();
+                obj.draw();
+            });
+            planets.forEach(planet => {
+                planet.update();
+                planet.draw();
+            });
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.draw();
+                if (particle.update()) {
+                    stars.push(new Star(particle.targetX, particle.targetY, { r: 255, g: 255, b: 255 }, particle.size * 0.5));
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function addBackgroundStars() {
+            for (let i = 0; i < 80; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const star = new Star(x, y, { r: 255, g: 255, b: 255 }, Math.random() * 1 + 0.3);
+                star.twinkleSpeed = Math.random() * 0.02 + 0.01;
+                stars.push(star);
+            }
+        }
+
+        document.getElementById('launchBtn').addEventListener('click', () => {
+            const input = document.getElementById('textInput');
+            const text = input.value.trim();
+            if (text) {
+                launchParticles(text);
+                input.value = '';
+            }
+        });
+
+        document.getElementById('textInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('launchBtn').click();
+            }
+        });
+
+        addBackgroundStars();
+        animate();
+
+        const saved = localStorage.getItem('galaxyData');
+        if (saved) {
+            const data = JSON.parse(saved);
+            totalLaunched = data.count || 0;
+            planetCount = data.planetCount || 0;
+            updateStats();
+            if (data.stars) {
+                data.stars.forEach(s => {
+                    const star = new Star(s.x, s.y, s.colorObj, s.size);
+                    star.brightness = s.brightness || 1;
+                    stars.push(star);
+                });
+            }
+            if (data.planets) {
+                data.planets.forEach(p => {
+                    const planet = new Planet(p.x, p.y, p.preset);
+                    planet.size = p.size;
+                    planet.growing = false;
+                    planets.push(planet);
+                });
+            }
+            if (data.specialObjects) {
+                data.specialObjects.forEach(s => {
+                    const obj = new SpecialObject(s.x, s.y, s.type);
+                    obj.size = s.size;
+                    obj.growing = false;
+                    specialObjects.push(obj);
+                });
+            }
+            if (data.particles) {
+                data.particles.forEach(p => {
+                    const particle = new Particle(p.x, p.y, p.targetX, p.targetY);
+                    particle.progress = p.progress;
+                    particle.trail = p.trail || [];
+                    particle.size = p.size;
+                    particle.glowSize = p.glowSize;
+                    particles.push(particle);
+                });
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            const starsData = stars.filter(s => s.baseSize > 1).map(s => ({
+                x: s.x, y: s.y, colorObj: s.colorObj, size: s.baseSize, brightness: s.brightness
+            }));
+            const planetsData = planets.map(p => ({
+                x: p.x, y: p.y, preset: p.preset, size: p.size
+            }));
+            const specialData = specialObjects.map(s => ({
+                x: s.x, y: s.y, type: s.type, size: s.size
+            }));
+            const particlesData = particles.map(p => ({
+                x: p.x, y: p.y, targetX: p.targetX, targetY: p.targetY,
+                progress: p.progress, trail: p.trail, size: p.size, glowSize: p.glowSize
+            }));
+            localStorage.setItem('galaxyData', JSON.stringify({
+                count: totalLaunched,
+                planetCount: planetCount,
+                stars: starsData.slice(-200),
+                planets: planetsData,
+                specialObjects: specialData,
+                particles: particlesData
+            }));
+        });
+    </script>
+</body>
+</html>
